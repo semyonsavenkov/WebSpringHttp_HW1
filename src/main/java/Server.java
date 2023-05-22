@@ -25,7 +25,6 @@ public class Server {
     public Server(int threadPoolSize, int port) {
         this.threadPoolSize = threadPoolSize;
         this.port = port;
-        ThreadPoolExecutor executor;
     }
 
     public void start(List<String> validPaths) throws IOException {
