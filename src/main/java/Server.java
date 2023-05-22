@@ -16,13 +16,16 @@ public class Server {
     private static final int DEFAULT_PORT = 9999;
     private int threadPoolSize;
     private int port;
+    ThreadPoolExecutor executor;
 
     public Server() {
         this(DEFAULT_THREAD_POOL_SIZE, DEFAULT_PORT);
     }
 
     public Server(int threadPoolSize, int port) {
-
+        this.threadPoolSize = threadPoolSize;
+        this.port = port;
+        ThreadPoolExecutor executor;
     }
 
     public void start(List<String> validPaths) throws IOException {
@@ -30,13 +33,15 @@ public class Server {
     }
 
     public void start(int port, List<String> validPaths) throws IOException {
+//        executor = new ThreadPoolExecutor(threadPoolSize, threadPoolSize, 1000, null, null);
 
         try (final var serverSocket = new ServerSocket(port)) {
+
             while (true) {
                 try (
                         final var socket = serverSocket.accept();
                 ) {
-                    ThreadPoolExecutor executor = new ThreadPoolExecutor(threadPoolSize, threadPoolSize, 1000, null, null);
+                    executor = new ThreadPoolExecutor(threadPoolSize, threadPoolSize, 1000, null, null);
                     executor.execute(() -> {
                         try {
                             handle(socket, validPaths);
