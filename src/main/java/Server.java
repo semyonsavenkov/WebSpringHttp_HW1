@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class Server {
@@ -17,6 +19,7 @@ public class Server {
     private int threadPoolSize;
     private int port;
     ThreadPoolExecutor executor;
+    ExecutorService threadPool;
 
     public Server() {
         this(DEFAULT_THREAD_POOL_SIZE, DEFAULT_PORT);
@@ -25,6 +28,7 @@ public class Server {
     public Server(int threadPoolSize, int port) {
         this.threadPoolSize = threadPoolSize;
         this.port = port;
+        threadPool = Executors.newFixedThreadPool(threadPoolSize);
     }
 
     public void start(List<String> validPaths) throws IOException {
@@ -32,7 +36,6 @@ public class Server {
     }
 
     public void start(int port, List<String> validPaths) throws IOException {
-//        executor = new ThreadPoolExecutor(threadPoolSize, threadPoolSize, 1000, null, null);
 
         try (final var serverSocket = new ServerSocket(port)) {
 
@@ -40,8 +43,7 @@ public class Server {
                 try (
                         final var socket = serverSocket.accept();
                 ) {
-                    executor = new ThreadPoolExecutor(threadPoolSize, threadPoolSize, 1000, null, null);
-                    executor.execute(() -> {
+                    threadPool.execute(() -> {
                         try {
                             handle(socket, validPaths);
                         } catch (IOException e) {
@@ -54,10 +56,6 @@ public class Server {
             }
         }
 
-
-//        ThreadPoolExecutor executor = new ThreadPoolExecutor(, , , , );
-//        executor.execute();
-//        ExecutorService threadPool = Executors.newFixedThreadPool(this.threadPoolSize);
     }
 
     private void handle(Socket socket, List<String> validPaths) throws IOException {
