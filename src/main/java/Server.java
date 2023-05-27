@@ -18,7 +18,6 @@ public class Server {
     private static final int DEFAULT_PORT = 9999;
     private int threadPoolSize;
     private int port;
-    ThreadPoolExecutor executor;
     ExecutorService threadPool;
 
     public Server() {
@@ -40,27 +39,22 @@ public class Server {
         try (final var serverSocket = new ServerSocket(port)) {
 
             while (true) {
-                try (
-                        final var socket = serverSocket.accept();
-                ) {
-                    threadPool.execute(() -> {
-                        try {
-                            handle(socket, validPaths);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                final var socket = serverSocket.accept();
+                final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                final var out = new BufferedOutputStream(socket.getOutputStream());
+                threadPool.execute(() -> {
+                    try {
+                        handle(socket, validPaths, in, out);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
             }
         }
 
     }
 
-    private void handle(Socket socket, List<String> validPaths) throws IOException {
-        final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        final var out = new BufferedOutputStream(socket.getOutputStream());
+    private void handle(Socket socket, List<String> validPaths, BufferedReader in, BufferedOutputStream out) throws IOException {
 
         // read only request line for simplicity
         // must be in form GET /path HTTP/1.1
@@ -68,7 +62,6 @@ public class Server {
         final var parts = requestLine.split(" ");
 
         if (parts.length != 3) {
-            // just close socket
             return;
         }
 
@@ -116,6 +109,5 @@ public class Server {
         ).getBytes());
         Files.copy(filePath, out);
         out.flush();
-
     }
 }
