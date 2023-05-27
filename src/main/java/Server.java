@@ -1,7 +1,4 @@
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -15,16 +12,14 @@ public class Server {
 
     private static final int DEFAULT_THREAD_POOL_SIZE = 64;
     private static final int DEFAULT_PORT = 9999;
-    private int threadPoolSize;
     private int port;
-    ExecutorService threadPool;
+    private ExecutorService threadPool;
 
     public Server() {
         this(DEFAULT_THREAD_POOL_SIZE, DEFAULT_PORT);
     }
 
     public Server(int threadPoolSize, int port) {
-        this.threadPoolSize = threadPoolSize;
         this.port = port;
         threadPool = Executors.newFixedThreadPool(threadPoolSize);
     }
@@ -34,15 +29,15 @@ public class Server {
     }
 
     public void start(int port, List<String> validPaths) throws IOException {
-
         try (final var serverSocket = new ServerSocket(port)) {
-
             while (true) {
                 final var socket = serverSocket.accept();
-                final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                final var out = new BufferedOutputStream(socket.getOutputStream());
                 threadPool.execute(() -> {
-                    try {
+                    try (
+                            socket;
+                            final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                            final var out = new BufferedOutputStream(socket.getOutputStream())
+                    ) {
                         handle(socket, validPaths, in, out);
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -50,11 +45,9 @@ public class Server {
                 });
             }
         }
-
     }
 
     private void handle(Socket socket, List<String> validPaths, BufferedReader in, BufferedOutputStream out) throws IOException {
-
         // read only request line for simplicity
         // must be in form GET /path HTTP/1.1
         final var requestLine = in.readLine();
